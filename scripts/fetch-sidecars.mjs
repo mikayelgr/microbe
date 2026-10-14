@@ -2,7 +2,7 @@
 // target triple into src-tauri/binaries/<name>-<triple>[.exe], as Tauri expects.
 // Usage: node scripts/fetch-sidecars.mjs [--target <triple>] [--ty-version <x.y.z>]
 import { execFileSync } from "node:child_process";
-import { mkdirSync, existsSync, writeFileSync, chmodSync, renameSync, rmSync, readdirSync } from "node:fs";
+import { mkdirSync, existsSync, writeFileSync, chmodSync, copyFileSync, rmSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
@@ -50,7 +50,8 @@ for (const sc of SIDECARS) {
   else execFileSync("tar", ["-xzf", archive, "-C", work]);
   const found = findFile(work, sc.name + exe);
   if (!found) throw new Error(`${sc.name}${exe} not found in archive`);
-  renameSync(found, dest);
+  // Copy, not rename: the temp dir may be on another drive (C: vs D: on CI).
+  copyFileSync(found, dest);
   if (!exe) chmodSync(dest, 0o755);
   rmSync(work, { recursive: true, force: true });
   console.log(`✓ ${sc.name} → ${dest}`);
