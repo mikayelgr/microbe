@@ -1,0 +1,8 @@
+# Renesas RA port.
+id = "renesas-ra"
+name = "Renesas RA"
+sys_platform = ["renesas-ra"]
+capabilities = ["raw_paste"]
+firmware_ext = ["hex", "bin"]
+stubs = { port = "renesas-ra" }
+usb = [{ vid = 0x045b, role = "runtime", note = "Renesas" }]

@@ -1,0 +1,48 @@
+{
+  "name": "microbe",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "tauri": "node scripts/tauri.mjs",
+    "sidecars": "node scripts/fetch-sidecars.mjs",
+    "bindings": "cd src-tauri && cargo test export_bindings",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.18.0",
+    "@codemirror/commands": "^6.8.0",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/lint": "^6.8.0",
+    "@codemirror/lsp-client": "^6.3.0",
+    "@codemirror/search": "^6.5.0",
+    "@codemirror/state": "^6.5.0",
+    "@codemirror/view": "^6.38.0",
+    "@lezer/highlight": "^1.2.0",
+    "@lucide/svelte": "1.57.0",
+    "@tauri-apps/api": "2.11.1",
+    "@tauri-apps/plugin-dialog": "2.7.3",
+    "@tauri-apps/plugin-store": "2.4.5",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "codemirror": "^6.0.2",
+    "material-icon-theme": "5.39.0",
+    "uplot": "^1.6.32"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.57.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tauri-apps/cli": "2.11.5",
+    "@tsconfig/svelte": "^5.0.8",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.6",
+    "typescript": "~5.9.0",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
+  }
+}

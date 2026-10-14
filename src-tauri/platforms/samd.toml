@@ -1,0 +1,20 @@
+# Microchip SAMD21 / SAMD51 port.
+id = "samd"
+name = "Microchip SAMD"
+sys_platform = ["samd"]
+capabilities = ["raw_paste", "bootloader_entry", "uf2"]
+firmware_ext = ["uf2"]
+bootloader_entry = "import machine; machine.bootloader()"
+stubs = { port = "samd" }
+
+usb = [
+  { vid = 0x239a, role = "runtime", note = "Adafruit" },
+  { vid = 0x2886, role = "runtime", note = "Seeed" },
+  { vid = 0x1b4f, role = "runtime", note = "SparkFun" },
+]
+
+[[flash]]
+method = "volume_copy"
+ext = ["uf2"]
+volume_labels = ["*BOOT"]
+info_file = "INFO_UF2.TXT"

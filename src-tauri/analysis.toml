@@ -1,0 +1,171 @@
+# Data for the static analysis engine (`src/analysis/`). Rules read these
+# tables; add entries here rather than code.
+#
+# [[module]]     an import that fails on MicroPython.
+#   name           module, matched exactly or as a dotted prefix ("RPi" matches "RPi.GPIO")
+#   hint           what to use instead
+#   except_platforms  platform ids where the module does exist
+#
+# [[attribute]]  a module attribute that CPython has and MicroPython doesn't.
+#   module, names, hint, except_platforms
+#
+# [[syntax]]     syntax MicroPython's compiler rejects.
+#   node           tree-sitter-python node kind
+#   token          optional: only when this anonymous child token is present
+#   message
+#
+# [[inline]]     decorators whose function bodies are compiled by MicroPython
+#                itself (inline assembler, PIO, viper). Names they inject are
+#                not "undefined"; the language server's reports are filtered.
+#   decorators     last segment of the decorator ("asm_pio" matches "rp2.asm_pio")
+#   names          injected names; omit with any = true to accept every name
+
+# --- Imports -----------------------------------------------------------------
+
+[[module]]
+name = "threading"
+hint = "use `_thread` (on ports that have it) or `asyncio`"
+
+[[module]]
+name = "multiprocessing"
+hint = "use `asyncio`, or `_thread` on ports that have it"
+
+[[module]]
+name = "concurrent"
+hint = "use `asyncio`"
+
+[[module]]
+name = "subprocess"
+hint = "a microcontroller has no processes to start"
+
+[[module]]
+name = "ctypes"
+hint = "use `uctypes` for structured memory access"
+
+[[module]]
+name = "sqlite3"
+hint = "use `btree` (where the firmware includes it) or plain files"
+
+[[module]]
+name = "tkinter"
+hint = "drive a display with a MicroPython driver such as `framebuf`"
+
+[[module]]
+name = "dataclasses"
+hint = "use a plain class or `collections.namedtuple`"
+
+[[module]]
+name = "numpy"
+hint = "use `ulab`, if your firmware is built with it"
+
+[[module]]
+name = "RPi"
+hint = "this is the Raspberry Pi Linux GPIO library; use `machine.Pin`"
+
+[[module]]
+name = "gpiozero"
+hint = "this is a Raspberry Pi Linux library; use `machine.Pin` and `machine.PWM`"
+
+[[module]]
+name = "smbus"
+hint = "use `machine.I2C`"
+
+[[module]]
+name = "smbus2"
+hint = "use `machine.I2C`"
+
+[[module]]
+name = "spidev"
+hint = "use `machine.SPI`"
+
+[[module]]
+name = "serial"
+hint = "pyserial runs on a PC; on the board use `machine.UART`"
+
+[[module]]
+name = "busio"
+hint = "this is CircuitPython; use `machine.I2C`, `machine.SPI` or `machine.UART`"
+
+[[module]]
+name = "digitalio"
+hint = "this is CircuitPython; use `machine.Pin`"
+
+[[module]]
+name = "analogio"
+hint = "this is CircuitPython; use `machine.ADC`"
+
+[[module]]
+name = "pwmio"
+hint = "this is CircuitPython; use `machine.PWM`"
+
+# --- Attributes --------------------------------------------------------------
+
+[[attribute]]
+module = "time"
+names = ["perf_counter", "perf_counter_ns", "monotonic", "monotonic_ns", "process_time", "process_time_ns"]
+hint = "use `time.ticks_ms()` / `time.ticks_us()` with `time.ticks_diff()`"
+
+[[attribute]]
+module = "time"
+names = ["strftime", "strptime"]
+hint = "format the tuple from `time.localtime()` yourself"
+
+[[attribute]]
+module = "sys"
+names = ["getsizeof"]
+hint = "compare `gc.mem_alloc()` before and after, or use `micropython.mem_info()`"
+
+[[attribute]]
+module = "os"
+names = ["environ", "getenv", "putenv", "system"]
+hint = "a microcontroller has no environment or shell"
+except_platforms = ["unix"]
+
+[[attribute]]
+module = "random"
+names = ["shuffle", "sample", "choices", "gauss"]
+hint = "MicroPython's `random` has `random`, `randint`, `randrange`, `choice`, `uniform` and `getrandbits`"
+
+[[attribute]]
+module = "math"
+names = ["gcd", "lcm", "prod", "comb", "perm", "dist", "isqrt"]
+hint = "write the helper yourself"
+
+# --- Syntax ------------------------------------------------------------------
+
+[[syntax]]
+node = "match_statement"
+message = "MicroPython doesn't support `match` statements; use `if` / `elif`"
+
+[[syntax]]
+node = "except_clause"
+token = "*"
+message = "MicroPython doesn't support exception groups (`except*`)"
+
+[[syntax]]
+node = "type_alias_statement"
+message = "MicroPython doesn't support `type` alias statements"
+
+[[syntax]]
+node = "type_parameter"
+message = "MicroPython doesn't support generic type parameter lists"
+
+# --- Inline code compiled by MicroPython -----------------------------------------
+
+[[inline]]
+decorators = ["asm_pio"]
+names = [
+  "wrap_target", "wrap", "label", "word", "jmp", "wait", "in_", "out", "push", "pull",
+  "mov", "irq", "set", "nop", "side", "delay",
+  "pins", "pindirs", "pin", "gpio", "x", "y", "osr", "isr", "null", "pc", "exec", "status",
+  "not_x", "not_y", "x_dec", "y_dec", "x_not_y", "not_osre", "invert", "reverse",
+  "block", "noblock", "iffull", "ifempty", "rel", "clear",
+]
+
+[[inline]]
+decorators = ["asm_thumb", "asm_xtensa", "asm_xtensawin"]
+any = true
+
+[[inline]]
+decorators = ["viper"]
+names = ["ptr", "ptr8", "ptr16", "ptr32", "uint"]

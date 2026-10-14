@@ -1,0 +1,15 @@
+# Firmware-version-specific protocol behaviour. Matched against the running
+# board's MicroPython version (and optionally its port) after it's identified.
+#
+#   versions  = comparison list, e.g. "<1.14" or ">=1.20, <1.23"
+#   platforms = optional list of platform ids the quirk applies to
+#
+# Fields (all optional):
+#   raw_paste      = false  → don't probe raw-paste mode (not supported)
+#   transfer_chunk = 256    → smaller raw-REPL writes for this firmware
+
+[[quirk]]
+description = "Raw-paste mode was added in MicroPython 1.14; older firmware echoes Ctrl-E back."
+versions = "<1.14"
+raw_paste = false
+

@@ -1,0 +1,15 @@
+# Nordic nRF51 / nRF52 / nRF91 port.
+id = "nrf"
+name = "Nordic nRF"
+sys_platform = ["nrf"]
+capabilities = ["raw_paste"]
+firmware_ext = ["uf2", "hex"]
+stubs = { port = "nrf" }
+
+usb = [{ vid = 0x1915, role = "runtime", note = "Nordic" }]
+
+[[flash]]
+method = "volume_copy"
+ext = ["uf2", "hex"]
+volume_labels = ["*BOOT", "NRF*", "DAPLINK", "MICROBIT"]
+info_file = "INFO_UF2.TXT"

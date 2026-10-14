@@ -1,0 +1,135 @@
+# Espressif ESP32 family (ESP32, S2, S3, C2, C3, C5, C6, H2, P4).
+id = "esp32"
+name = "Espressif ESP32 family"
+sys_platform = ["esp32"]
+capabilities = ["raw_paste", "esp_rom", "serial_hard_reset"]
+firmware_ext = ["bin"]
+stubs = { port = "esp32" }
+transfer_chunk = 2048
+
+usb = [
+  { vid = 0x303a, pid = 0x1001, role = "runtime", note = "USB-Serial/JTAG" },
+  { vid = 0x303a, pid = 0x4001, role = "runtime", note = "TinyUSB CDC" },
+  { vid = 0x303a, pid = 0x0002, role = "bootloader", note = "ROM download mode" },
+  { vid = 0x303a, pid = 0x0009, role = "bootloader", note = "ROM download mode" },
+  { vid = 0x10c4, pid = 0xea60, role = "uart_bridge", note = "CP210x" },
+  { vid = 0x1a86, pid = 0x7523, role = "uart_bridge", note = "CH340" },
+  { vid = 0x1a86, pid = 0x55d4, role = "uart_bridge", note = "CH9102" },
+  { vid = 0x0403, pid = 0x6001, role = "uart_bridge", note = "FTDI" },
+  { vid = 0x0403, pid = 0x6010, role = "uart_bridge", note = "FTDI" },
+  { vid = 0x0403, pid = 0x6015, role = "uart_bridge", note = "FTDI" },
+]
+
+[serial]
+hard_reset = "esp_classic"
+
+[[flash]]
+method = "espflash"
+ext = ["bin"]
+# Firmware load offset per chip (from micropython.org install instructions).
+offsets = { esp32 = 0x1000, esp32s2 = 0x1000, esp32s3 = 0x0, esp32c2 = 0x0, esp32c3 = 0x0, esp32c5 = 0x2000, esp32c6 = 0x0, esp32h2 = 0x0, esp32p4 = 0x2000 }
+
+[[flash]]
+method = "esptool"
+ext = ["bin"]
+offsets = { esp32 = 0x1000, esp32s2 = 0x1000, esp32s3 = 0x0, esp32c2 = 0x0, esp32c3 = 0x0, esp32c5 = 0x2000, esp32c6 = 0x0, esp32h2 = 0x0, esp32p4 = 0x2000 }
+
+# Chip detected by the ROM bootloader → generic board id. A "+psram" suffix
+# selects the SPIRAM variant when PSRAM was detected.
+[[detect]]
+match = "esp32"
+board = "ESP32_GENERIC"
+[[detect]]
+match = "esp32+psram"
+board = "ESP32_GENERIC-SPIRAM"
+[[detect]]
+match = "esp32s2"
+board = "ESP32_GENERIC_S2"
+[[detect]]
+match = "esp32s3"
+board = "ESP32_GENERIC_S3"
+[[detect]]
+match = "esp32c2"
+board = "ESP32_GENERIC_C2"
+[[detect]]
+match = "esp32c3"
+board = "ESP32_GENERIC_C3"
+[[detect]]
+match = "esp32c5"
+board = "ESP32_GENERIC_C5"
+[[detect]]
+match = "esp32c6"
+board = "ESP32_GENERIC_C6"
+[[detect]]
+match = "esp32p4"
+board = "ESP32_GENERIC_P4"
+
+# GPIO numbers for the static pin check; the first matching map wins. Chips
+# not listed here (C2, C5, H2, P4) aren't checked.
+[[pins]]
+chips = ["ESP32"]
+boards = ["*-SPIRAM*"]
+gpio = "0-19,21-23,25-27,32-39"
+input_only = "34-39"
+[[pins.reserved]]
+pins = "6-11"
+reason = "is connected to the SPI flash; using it crashes the board"
+[[pins.reserved]]
+pins = "16-17"
+reason = "is used by the PSRAM on WROVER modules"
+
+[[pins]]
+chips = ["ESP32"]
+gpio = "0-19,21-23,25-27,32-39"
+input_only = "34-39"
+[[pins.reserved]]
+pins = "6-11"
+reason = "is connected to the SPI flash; using it crashes the board"
+
+[[pins]]
+chips = ["ESP32S2"]
+gpio = "0-21,26-46"
+input_only = "46"
+[[pins.reserved]]
+pins = "26-32"
+reason = "is connected to the SPI flash / PSRAM"
+
+[[pins]]
+chips = ["ESP32S3"]
+boards = ["*SPIRAM_OCT*"]
+gpio = "0-21,26-48"
+[[pins.reserved]]
+pins = "26-32"
+reason = "is connected to the SPI flash / PSRAM"
+[[pins.reserved]]
+pins = "33-37"
+reason = "is used by the octal PSRAM"
+
+[[pins]]
+chips = ["ESP32S3"]
+gpio = "0-21,26-48"
+[[pins.reserved]]
+pins = "26-32"
+reason = "is connected to the SPI flash / PSRAM"
+
+[[pins]]
+chips = ["ESP32C3"]
+gpio = "0-21"
+[[pins.reserved]]
+pins = "12-17"
+reason = "is connected to the SPI flash"
+
+[[pins]]
+chips = ["ESP32C6"]
+gpio = "0-30"
+[[pins.reserved]]
+pins = "24-30"
+reason = "is connected to the SPI flash"
+
+# Over-the-air update through the running MicroPython (OTA firmware builds).
+# Used only when asked for explicitly. chip_ids: the image header's chip id per
+# chip name, to refuse images for another chip.
+[[flash]]
+method = "esp32_ota"
+ext = ["app-bin", "bin"]
+chip_ids = { ESP32 = 0, ESP32S2 = 2, ESP32C3 = 5, ESP32S3 = 9, ESP32C2 = 12, ESP32C6 = 13, ESP32H2 = 16, ESP32P4 = 18, ESP32C5 = 23 }

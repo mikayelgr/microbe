@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Microbe</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#25282e"/>
+      <stop offset="1" stop-color="#17191d"/>
+    </linearGradient>
+  </defs>
+  <!-- tile -->
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#tile)"/>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="none" stroke="#3a3e46" stroke-width="8"/>
+  <!-- chip body and pins -->
+  <g stroke="#3d8cf0" stroke-width="30" stroke-linecap="round" fill="none">
+    <rect x="292" y="292" width="440" height="440" rx="64"/>
+    <path d="M412 292V212M512 292V212M612 292V212M412 732V812M512 732V812M612 732V812M292 412H212M292 512H212M292 612H212M732 412H812M732 512H812M732 612H812"/>
+  </g>
+  <!-- μ -->
+  <path transform="translate(-18 -22)" d="M432 392V676M432 392V520C432 566 462 594 508 594C554 594 588 566 588 520V392M588 520V560C588 584 602 594 624 594"
+        stroke="#e6e9ef" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

@@ -1,0 +1,4 @@
+# Fallback when the device cannot be identified. Only the portable feature set.
+id = "generic"
+name = "Generic MicroPython"
+capabilities = []

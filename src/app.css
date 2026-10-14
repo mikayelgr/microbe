@@ -1,0 +1,284 @@
+/* Design tokens. Dense, neutral, editor-first — in the vein of VS Code / Zed. */
+:root {
+  --bg: #f3f3f3;
+  --bg-elev: #ffffff;
+  --bg-sunken: #ebebeb;
+  --bg-hover: #e1e1e1;
+  --bg-active: #d6d6d6;
+  --bg-select: #dbe7f7;
+  --border: #d4d4d4;
+  --border-strong: #c2c2c2;
+  --text: #1f1f1f;
+  --text-dim: #616161;
+  --text-faint: #8c8c8c;
+  --accent: #0a64c8;
+  --accent-strong: #0858b0;
+  --accent-soft: #dbe7f7;
+  --ok: #2e8b4e;
+  --danger: #c72e2e;
+  --warn: #b5730a;
+  --info: #0a64c8;
+  --term-bg: #ffffff;
+  --term-fg: #1f1f1f;
+  /* Explorer / sidebar */
+  --sidebar-bg: #f3f3f3;
+  --tree-fg: #1f1f1f;
+  --tree-hover: #e4e6ea;
+  --tree-active: #bad3f3;
+  --tree-active-fg: #0b1f36;
+  --tree-guide: #c9ccd1;
+  --sel-bg: #add6ff;
+  --sel-bg-inactive: #d3e5fa;
+  --sel-match: #add6ff80;
+  --line-active: #f5f5f5;
+  --search-bg: #f8c94a66;
+  --tok-keyword: #0000c8;
+  --tok-string: #a31515;
+  --tok-number: #098658;
+  --tok-comment: #6a8a6a;
+  --tok-function: #795e26;
+  --tok-def: #795e26;
+  --tok-type: #267f99;
+  --tok-prop: #001080;
+  --tok-self: #0000c8;
+  --tok-meta: #af00db;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --radius: 3px;
+  --row: 22px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1e1f22;
+    --bg-elev: #212226;
+    --bg-sunken: #18191b;
+    --bg-hover: #2a2c30;
+    --bg-active: #34363b;
+    --bg-select: #20354f;
+    --border: #2d2f34;
+    --border-strong: #3c3f45;
+    --text: #d4d6db;
+    --text-dim: #9a9ea6;
+    --text-faint: #6c7079;
+    --accent: #3d8cf0;
+    --accent-strong: #5b9ff3;
+    --accent-soft: #20354f;
+    --ok: #4cb36f;
+    --danger: #e05d5d;
+    --warn: #d19a3a;
+    --info: #3d8cf0;
+    --term-bg: #18191b;
+    --term-fg: #d4d6db;
+    /* Explorer / sidebar: darker than the editor, with a clearly lit selection. */
+    --sidebar-bg: #141517;
+    --tree-fg: #c9ccd2;
+    --tree-hover: #25272b;
+    --tree-active: #26476d;
+    --tree-active-fg: #ffffff;
+    --tree-guide: #3a3d43;
+    --sel-bg: #264f78;
+    --sel-bg-inactive: #233a52;
+    --sel-match: #264f7899;
+    --line-active: #222326;
+    --search-bg: #6b551466;
+    --tok-keyword: #cf8e6d;
+    --tok-string: #6aab73;
+    --tok-number: #2aacb8;
+    --tok-comment: #7a7e85;
+    --tok-function: #56a8f5;
+    --tok-def: #56a8f5;
+    --tok-type: #c9a26d;
+    --tok-prop: #c77dbb;
+    --tok-self: #94558d;
+    --tok-meta: #b3ae60;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #1e1f22;
+  --bg-elev: #212226;
+  --bg-sunken: #18191b;
+  --bg-hover: #2a2c30;
+  --bg-active: #34363b;
+  --bg-select: #20354f;
+  --border: #2d2f34;
+  --border-strong: #3c3f45;
+  --text: #d4d6db;
+  --text-dim: #9a9ea6;
+  --text-faint: #6c7079;
+  --accent: #3d8cf0;
+  --accent-strong: #5b9ff3;
+  --accent-soft: #20354f;
+  --ok: #4cb36f;
+  --danger: #e05d5d;
+  --warn: #d19a3a;
+  --info: #3d8cf0;
+  --term-bg: #18191b;
+  --term-fg: #d4d6db;
+  /* Explorer / sidebar: darker than the editor, with a clearly lit selection. */
+  --sidebar-bg: #141517;
+  --tree-fg: #c9ccd2;
+  --tree-hover: #25272b;
+  --tree-active: #26476d;
+  --tree-active-fg: #ffffff;
+  --tree-guide: #3a3d43;
+  --sel-bg: #264f78;
+  --sel-bg-inactive: #233a52;
+  --sel-match: #264f7899;
+  --line-active: #222326;
+  --search-bg: #6b551466;
+  --tok-keyword: #cf8e6d;
+  --tok-string: #6aab73;
+  --tok-number: #2aacb8;
+  --tok-comment: #7a7e85;
+  --tok-function: #56a8f5;
+  --tok-def: #56a8f5;
+  --tok-type: #c9a26d;
+  --tok-prop: #c77dbb;
+  --tok-self: #94558d;
+  --tok-meta: #b3ae60;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+/* Selected text is blue everywhere (inputs, dialogs, toasts, panels); the
+   editor and terminal use the same tokens (editor/setup.ts, Terminal.svelte). */
+::selection { background: var(--sel-bg); }
+html, body, #app { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 12px/1.4 var(--font-ui);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  height: 24px;
+  padding: 0 8px;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+button:hover:not(:disabled) { background: var(--bg-hover); }
+button:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+button:disabled { opacity: 0.45; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:hover:not(:disabled) { background: var(--accent-strong); border-color: var(--accent-strong); }
+button.danger { color: var(--danger); }
+button.ghost { background: transparent; border-color: transparent; padding: 0 4px; color: var(--text-dim); }
+button.ghost:hover:not(:disabled) { background: var(--bg-hover); color: var(--text); }
+
+input, select, textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  height: 24px;
+  padding: 0 6px;
+  outline: none;
+  user-select: text;
+}
+textarea { height: auto; padding: 4px 6px; }
+input[type="checkbox"], input[type="radio"] { height: auto; accent-color: var(--accent); margin: 0; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+label { color: var(--text-dim); }
+code { font-family: var(--font-mono); font-size: 11px; }
+
+.mono { font-family: var(--font-mono); }
+.dim { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.row { display: flex; align-items: center; gap: 6px; }
+.col { display: flex; flex-direction: column; gap: 6px; }
+.grow { flex: 1; min-width: 0; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Sidebar panels: header + scrolling body. */
+.panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.panel.scroll { overflow: auto; }
+.small { font-size: 11px; }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding: 0 6px 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  flex: none;
+}
+.panel-header .spacer { flex: 1; }
+/* Secondary actions show on hover/focus so idle panels stay quiet. */
+.panel-header .actions { display: flex; gap: 1px; opacity: 0; transition: opacity 0.1s; }
+.panel:hover .panel-header .actions,
+.panel-header:focus-within .actions { opacity: 1; }
+.panel-header button.ghost { height: 22px; width: 22px; justify-content: center; padding: 0; }
+.section { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.empty { padding: 14px 12px; color: var(--text-faint); }
+.badge {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 2px;
+  font-size: 10px;
+  line-height: 16px;
+  font-family: var(--font-mono);
+  border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+}
+.badge.ok { border-color: var(--ok); color: var(--ok); }
+
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--bg-active); border: 3px solid transparent; background-clip: content-box; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--border-strong); }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+
+.cm-editor { height: 100%; }
+.cm-editor .cm-scroller { font-family: var(--font-mono); line-height: 1.55; }
+/* Editor tooltips live on <body> (see editor/setup.ts); keep them inside the
+   window and scroll long documentation instead of overflowing. */
+.cm-tooltip {
+  border-radius: var(--radius);
+  max-width: min(640px, calc(100vw - 16px));
+  z-index: 80;
+  font-size: 12px;
+}
+.cm-tooltip-hover,
+.cm-lsp-hover-tooltip,
+.cm-lsp-signature-tooltip,
+.cm-tooltip.cm-completionInfo,
+.cm-lsp-completion-documentation {
+  max-height: min(45vh, 420px);
+  overflow: auto;
+  user-select: text;
+}
+.cm-tooltip.cm-completionInfo { max-width: min(480px, calc(100vw - 16px)); }
+.cm-lsp-documentation { padding: 4px 8px; line-height: 1.5; }
+.cm-lsp-documentation pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+  margin: 4px 0;
+}
+.cm-lsp-documentation code { word-break: break-word; }
+.cm-lsp-documentation p { margin: 4px 0; }

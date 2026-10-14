@@ -1,0 +1,20 @@
+# STM32 port (pyboard, Nucleo, Pyboard-D, ...).
+id = "stm32"
+name = "STM32 / pyboard"
+sys_platform = ["pyboard"]
+capabilities = ["raw_paste", "bootloader_entry"]
+firmware_ext = ["dfu", "hex"]
+bootloader_entry = "import machine; machine.bootloader()"
+fs_root = "/flash"
+stubs = { port = "stm32" }
+
+usb = [
+  { vid = 0xf055, pid = 0x9800, role = "runtime", note = "pyboard CDC+MSC" },
+  { vid = 0xf055, pid = 0x9801, role = "runtime", note = "pyboard CDC+HID" },
+  { vid = 0xf055, pid = 0x9802, role = "runtime", note = "pyboard CDC" },
+  { vid = 0x0483, pid = 0xdf11, role = "bootloader", note = "STM32 DFU" },
+]
+
+[[flash]]
+method = "dfu"
+ext = ["dfu"]

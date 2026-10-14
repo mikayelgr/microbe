@@ -1,0 +1,18 @@
+# NXP i.MX RT port (Teensy 4.x, MIMXRT10xx EVKs).
+id = "mimxrt"
+name = "NXP i.MX RT"
+sys_platform = ["mimxrt"]
+capabilities = ["raw_paste"]
+firmware_ext = ["hex", "bin"]
+stubs = { port = "mimxrt" }
+
+usb = [
+  { vid = 0x16c0, pid = 0x0483, role = "runtime", note = "Teensy" },
+  { vid = 0x1fc9, role = "runtime", note = "NXP" },
+]
+
+[[flash]]
+# EVK boards expose a DAPLink mass-storage volume that accepts .bin/.hex.
+method = "volume_copy"
+ext = ["bin", "hex"]
+volume_labels = ["RT10*", "DAPLINK", "MIMXRT*"]

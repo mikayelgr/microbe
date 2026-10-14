@@ -1,0 +1,8 @@
+# Unix / Windows ports running on a host machine. Paths are relative to the
+# process's working directory (the simulator's sandbox folder).
+id = "unix"
+name = "Unix / Windows port"
+sys_platform = ["linux", "darwin", "win32", "freebsd"]
+capabilities = ["raw_paste"]
+fs_root = "."
+stubs = { port = "unix" }

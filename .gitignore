@@ -1,0 +1,10 @@
+node_modules
+dist
+src-tauri/target
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+src-tauri/gen
+.microbe
+.DS_Store
+test-results
+playwright-report

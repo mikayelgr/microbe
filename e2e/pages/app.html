@@ -1,0 +1,43 @@
+<!doctype html>
+<!-- Mounts the real App in a browser with the Tauri backend stubbed out, so UI
+     behaviour can be tested in WebKit (the engine of the macOS app). -->
+<html>
+  <head><meta charset="utf-8" /><title>Microbe e2e</title></head>
+  <body>
+    <script>
+      // Event listeners by event name: [callback id].
+      const listeners = {};
+      let nextEventId = 1;
+      // Built-in answers; tests add their own in window.__stubs[cmd](args).
+      const builtins = {
+        "plugin:event|listen": ({ event, handler }) => ((listeners[event] ??= []).push(handler), nextEventId++),
+        "plugin:event|unlisten": () => null,
+        "plugin:path|resolve_directory": () => "/tmp/microbe-e2e",
+      };
+      window.__TAURI_INTERNALS__ = {
+        transformCallback: (cb) => {
+          const id = Math.floor(Math.random() * 1e9);
+          window["_" + id] = cb;
+          return id;
+        },
+        unregisterCallback: (id) => delete window["_" + id],
+        // Backend commands fail as if the backend were unavailable, unless a
+        // test (or the builtins above) supplies an answer.
+        invoke: (cmd, args) => {
+          const fn = window.__stubs?.[cmd] ?? builtins[cmd];
+          return fn ? Promise.resolve().then(() => fn(args)) : Promise.reject("no backend: " + cmd);
+        },
+        metadata: { currentWindow: { label: "main" }, currentWebview: { label: "main" } },
+      };
+      // Test helpers: emit a backend event / send a message on a Channel.
+      window.__emit = (event, payload) => (listeners[event] ?? []).forEach((h) => window["_" + h]?.({ event, id: 0, payload }));
+      const channelIndex = {};
+      window.__channel = (id, message) => {
+        const index = (channelIndex[id] = (channelIndex[id] ?? -1) + 1);
+        window["_" + id]?.({ index, message });
+      };
+    </script>
+    <div id="app" style="height: 100vh"></div>
+    <script type="module" src="./app.ts"></script>
+  </body>
+</html>

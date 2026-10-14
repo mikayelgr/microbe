@@ -1,0 +1,48 @@
+# Raspberry Pi RP2040 / RP2350 port.
+id = "rp2"
+name = "Raspberry Pi RP2040 / RP2350"
+sys_platform = ["rp2"]
+capabilities = ["raw_paste", "bootloader_entry", "uf2"]
+firmware_ext = ["uf2"]
+bootloader_entry = "import machine; machine.bootloader()"
+stubs = { port = "rp2" }
+
+usb = [
+  { vid = 0x2e8a, pid = 0x0005, role = "runtime" },
+  { vid = 0x2e8a, pid = 0x0003, role = "bootloader", note = "RP2040 BOOTSEL" },
+  { vid = 0x2e8a, pid = 0x000f, role = "bootloader", note = "RP2350 BOOTSEL" },
+]
+
+[[flash]]
+method = "volume_copy"
+ext = ["uf2"]
+volume_labels = ["RPI-RP2", "RP2350"]
+info_file = "INFO_UF2.TXT"
+
+[[detect]]
+# INFO_UF2.TXT "Board-ID" line → board id
+match = "RPI-RP2"
+board = "RPI_PICO"
+[[detect]]
+match = "RP2350"
+board = "RPI_PICO2"
+
+# GPIO numbers for the static pin check; the first matching map wins.
+[[pins]]
+boards = ["RPI_PICO_W", "RPI_PICO2_W"]
+gpio = "0-29"
+[[pins.reserved]]
+pins = "23-25,29"
+reason = "is wired to the CYW43 wireless chip on the Pico W; use Pin(\"LED\") for the onboard LED"
+
+[[pins]]
+boards = ["RPI_PICO", "RPI_PICO2"]
+gpio = "0-29"
+
+[[pins]]
+# RP2350B; the RP2350A package only brings out GPIO 0-29.
+chips = ["RP2350"]
+gpio = "0-47"
+
+[[pins]]
+gpio = "0-29"

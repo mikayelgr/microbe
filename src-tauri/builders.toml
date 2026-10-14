@@ -1,0 +1,90 @@
+# How to build MicroPython firmware from source in Docker, per port.
+#
+# [images.<name>]   an image Microbe builds itself from `dockerfile` and tags `tag`.
+# [[builder]]
+#   ports       MicroPython ports this recipe builds
+#   image       a Docker Hub image ("espressif/idf:{idf}") or "local:<name>" for [images.<name>]
+#   make_args   arguments selecting the board ({board}, {variant_arg} = " BOARD_VARIANT=X" or "")
+#   build_dir   build directory under ports/<port>/ ({board}, {variant_suffix} = "-X" or "")
+#   c_modules   USER_C_MODULES value for a C modules folder mounted at /cmods
+#   artifacts   files copied out of the build directory; `as` renames (".app-bin"
+#               marks an ESP32 app image, used for OTA updates)
+#   [[builder.idf]]  ESP-IDF version per MicroPython version (first match wins;
+#                    see ports/esp32/README.md for the supported versions)
+
+[images.arm]
+tag = "microbe-build-arm:1"
+dockerfile = """
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git make cmake python3 build-essential ca-certificates \
+    gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
+ && rm -rf /var/lib/apt/lists/*
+"""
+
+[images.host]
+tag = "microbe-build-host:1"
+dockerfile = """
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git make python3 build-essential pkg-config libffi-dev ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+"""
+
+[[builder]]
+ports = ["esp32"]
+image = "espressif/idf:{idf}"
+make_args = "BOARD={board}{variant_arg}"
+build_dir = "build-{board}{variant_suffix}"
+c_modules = "/cmods/micropython.cmake"
+artifacts = [{ file = "firmware.bin" }, { file = "micropython.bin", as = "firmware.app-bin" }]
+[[builder.idf]]
+micropython = ">=1.26"
+idf = "v5.4.2"
+[[builder.idf]]
+micropython = ">=1.25"
+idf = "v5.4.1"
+[[builder.idf]]
+micropython = ">=1.24"
+idf = "v5.2.2"
+[[builder.idf]]
+micropython = ">=1.23"
+idf = "v5.2"
+[[builder.idf]]
+micropython = ">=1.22"
+idf = "v5.0.4"
+[[builder.idf]]
+micropython = "<1.22"
+idf = "v5.0.2"
+
+[[builder]]
+ports = ["rp2"]
+image = "local:arm"
+make_args = "BOARD={board}{variant_arg}"
+build_dir = "build-{board}{variant_suffix}"
+c_modules = "/cmods/micropython.cmake"
+artifacts = [{ file = "firmware.uf2" }]
+
+[[builder]]
+ports = ["stm32", "samd", "nrf", "mimxrt", "renesas-ra"]
+image = "local:arm"
+make_args = "BOARD={board}"
+build_dir = "build-{board}"
+c_modules = "/cmods"
+artifacts = [{ file = "firmware.uf2" }, { file = "firmware.dfu" }, { file = "firmware.hex" }, { file = "firmware.bin" }]
+
+[[builder]]
+ports = ["esp8266"]
+image = "larsks/esp-open-sdk"
+make_args = "BOARD={board}{variant_arg}"
+build_dir = "build-{board}{variant_suffix}"
+c_modules = "/cmods"
+artifacts = [{ file = "firmware.bin" }]
+
+[[builder]]
+ports = ["unix"]
+image = "local:host"
+make_args = "VARIANT={board}"
+build_dir = "build-{board}"
+c_modules = "/cmods"
+artifacts = [{ file = "micropython" }]
