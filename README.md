@@ -73,6 +73,8 @@ Installer names don't include the version, so these links always point at the la
 | Linux x64 | https://github.com/mikayelgr/microbe/releases/latest/download/microbe-linux-x64.AppImage (or `.deb`, `.rpm`) |
 | Checksums | https://github.com/mikayelgr/microbe/releases/latest/download/SHA256SUMS.txt |
 
+The macOS app is ad-hoc signed but not notarized (D-030). On first launch macOS says it can't verify the app. Right-click the app and choose **Open**, or use **System Settings → Privacy & Security → Open Anyway**. You can also run `xattr -dr com.apple.quarantine /Applications/Microbe.app`.
+
 ## Keyboard shortcuts
 
 | Action | Shortcut |

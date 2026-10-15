@@ -15,7 +15,8 @@
 #   microbe-linux-x64.AppImage   microbe-linux-x64.deb   microbe-linux-x64.rpm
 #   SHA256SUMS.txt
 #
-# Binaries are unsigned; macOS Gatekeeper and Windows SmartScreen will warn.
+# Binaries are not notarized/signed with a vendor identity (macOS bundles are
+# ad-hoc signed, D-030); macOS Gatekeeper and Windows SmartScreen will warn.
 name: Build
 
 on:
@@ -77,7 +78,7 @@ jobs:
           fi
 
           base="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag"
-          notes="Unsigned builds: macOS Gatekeeper and Windows SmartScreen will warn on first launch.
+          notes="Unsigned builds: macOS Gatekeeper and Windows SmartScreen will warn on first launch. On macOS, right-click Microbe.app and choose Open (or System Settings → Privacy & Security → Open Anyway).
 
           | Platform | Download |
           |---|---|
