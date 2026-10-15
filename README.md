@@ -61,7 +61,17 @@ No board? Open the connect dialog (⌘K) and choose **Local (unix port)** to run
 npm run tauri build     # .app / .dmg on macOS, .msi on Windows, .deb/.AppImage on Linux
 ```
 
-CI builds all platforms ([`.github/workflows/build.yml`](.github/workflows/build.yml)). Pushing a `v*` tag attaches Linux, Windows and macOS (Apple Silicon and Intel) installers to a draft release; running the workflow by hand uploads them as artifacts.
+CI builds all platforms ([`.github/workflows/build.yml`](.github/workflows/build.yml)). To release, bump `version` in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`, then push to `main`. CI builds Linux, Windows and macOS (Apple Silicon and Intel) installers and publishes them as release `v<version>`. Pushes that don't change the version build nothing. Running the workflow by hand builds the installers as artifacts without publishing.
+
+Installer names don't include the version, so these links always point at the latest release:
+
+| Platform | Link |
+|---|---|
+| macOS (Apple Silicon) | https://github.com/mikayelgr/microbe/releases/latest/download/microbe-macos-arm64.dmg |
+| macOS (Intel) | https://github.com/mikayelgr/microbe/releases/latest/download/microbe-macos-x64.dmg |
+| Windows x64 | https://github.com/mikayelgr/microbe/releases/latest/download/microbe-windows-x64-setup.exe (or `microbe-windows-x64.msi`) |
+| Linux x64 | https://github.com/mikayelgr/microbe/releases/latest/download/microbe-linux-x64.AppImage (or `.deb`, `.rpm`) |
+| Checksums | https://github.com/mikayelgr/microbe/releases/latest/download/SHA256SUMS.txt |
 
 ## Keyboard shortcuts
 

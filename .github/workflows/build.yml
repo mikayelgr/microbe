@@ -1,19 +1,26 @@
-# Builds Microbe for Linux, Windows and macOS.
+# Builds Microbe for Linux, Windows and macOS and publishes releases (D-029).
 #
-# - Push a tag like `v0.2.0`: if any build input changed since the most recent
-#   release that has installers, builds every platform and attaches the
-#   installers to a draft GitHub release named after the tag. If nothing
-#   changed, skips the build and copies that release's installers to the new
-#   draft release instead (D-028).
+# - Push to main: if no published release exists for the version in
+#   src-tauri/tauri.conf.json (tag `v<version>`), builds every platform and
+#   publishes release `v<version>`, tagging the pushed commit. If that version
+#   was already released, nothing is built: bump the version to release again.
 # - Run manually (Actions → Build → Run workflow): always builds every platform
-#   and uploads the installers as workflow artifacts.
+#   and uploads the installers as workflow artifacts. Nothing is published.
+#
+# Installers have stable, version-free names (scripts/release-assets.mjs), so
+# https://github.com/<repo>/releases/latest/download/<name> always serves the
+# newest release:
+#   microbe-macos-arm64.dmg      microbe-windows-x64-setup.exe
+#   microbe-macos-x64.dmg        microbe-windows-x64.msi
+#   microbe-linux-x64.AppImage   microbe-linux-x64.deb   microbe-linux-x64.rpm
+#   SHA256SUMS.txt
 #
 # Binaries are unsigned; macOS Gatekeeper and Windows SmartScreen will warn.
 name: Build
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,83 +30,76 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+
 jobs:
-  changes:
-    name: Detect changes
+  prepare:
+    name: Prepare release
     runs-on: ubuntu-latest
     outputs:
       build: ${{ steps.check.outputs.build }}
-      previous: ${{ steps.check.outputs.previous }}
+      release: ${{ steps.check.outputs.release }}
+      tag: ${{ steps.check.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Compare with the previous release
+      - name: Check the version and create a draft release
         id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          build() { echo "$1"; echo "build=true" >> "$GITHUB_OUTPUT"; exit 0; }
+          version=$(jq -r .version src-tauri/tauri.conf.json)
+          npm_version=$(jq -r .version package.json)
+          cargo_version=$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n1)
+          if [[ "$version" != "$npm_version" || "$version" != "$cargo_version" ]]; then
+            echo "::error::Versions differ: tauri.conf.json $version, package.json $npm_version, Cargo.toml $cargo_version"
+            exit 1
+          fi
+          tag="v$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-          [[ "$GITHUB_REF" == refs/tags/* ]] || build "Manual run: building."
-          tag="$GITHUB_REF_NAME"
-
-          # Most recent other release (drafts included) that has installers.
-          prev=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
-            --jq ".[] | select(.tag_name != \"$tag\" and (.assets | length) > 0) | [.created_at, .tag_name] | @tsv" \
-            | sort -r | head -n1 | cut -f2)
-          [[ -n "$prev" ]] || build "No earlier release with installers: building."
-          git rev-parse -q --verify "refs/tags/$prev^{commit}" >/dev/null \
-            || build "Tag $prev of the previous release is missing: building."
-
-          # Everything in the repo is a build input except docs and tests.
-          # Version bumps in package.json / tauri.conf.json / Cargo.toml count:
-          # the version is compiled into the app.
-          changed=$(git diff --name-only "refs/tags/$prev" "$GITHUB_SHA" -- . \
-            ':(exclude)docs' \
-            ':(exclude)e2e' \
-            ':(exclude)src-tauri/tests' \
-            ':(exclude)*.md' \
-            ':(exclude)*.test.ts' \
-            ':(exclude)playwright.config.ts' \
-            ':(exclude).gitignore')
-          if [[ -n "$changed" ]]; then
-            build "Build inputs changed since $prev:"$'\n'"$changed"
+          if [[ "$GITHUB_EVENT_NAME" != push ]]; then
+            echo "Manual run: building $tag without publishing."
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-          echo "No build inputs changed since $prev: carrying its installers over."
-          echo "build=false" >> "$GITHUB_OUTPUT"
-          echo "previous=$prev" >> "$GITHUB_OUTPUT"
-
-  carry-over:
-    name: Carry over installers
-    needs: changes
-    if: needs.changes.outputs.build == 'false'
-    runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
-      TAG: ${{ github.ref_name }}
-      PREV: ${{ needs.changes.outputs.previous }}
-    steps:
-      - name: Copy installers from ${{ needs.changes.outputs.previous }}
-        run: |
-          set -euo pipefail
-          dir=$(mktemp -d)
-          gh release download "$PREV" --dir "$dir"
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --draft --verify-tag \
-              --title "Microbe $TAG" \
-              --notes "See the assets below for installers for Linux, Windows and macOS. No build inputs changed since $PREV, so these are its installers."
+          # gh finds drafts by tag name too; a draft is left over from an
+          # interrupted run and is reused.
+          draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null || echo none)
+          if [[ "$draft" == false ]]; then
+            echo "$tag is already released. Bump the version to publish a new release."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-          gh release upload "$TAG" "$dir"/* --clobber
+
+          base="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag"
+          notes="Unsigned builds: macOS Gatekeeper and Windows SmartScreen will warn on first launch.
+
+          | Platform | Download |
+          |---|---|
+          | macOS (Apple Silicon) | [microbe-macos-arm64.dmg]($base/microbe-macos-arm64.dmg) |
+          | macOS (Intel) | [microbe-macos-x64.dmg]($base/microbe-macos-x64.dmg) |
+          | Windows x64 | [microbe-windows-x64-setup.exe]($base/microbe-windows-x64-setup.exe) · [.msi]($base/microbe-windows-x64.msi) |
+          | Linux x64 | [microbe-linux-x64.AppImage]($base/microbe-linux-x64.AppImage) · [.deb]($base/microbe-linux-x64.deb) · [.rpm]($base/microbe-linux-x64.rpm) |"
+          if [[ "$draft" == true ]]; then
+            echo "Reusing the draft release for $tag, retargeted at $GITHUB_SHA."
+            gh release edit "$tag" --target "$GITHUB_SHA"
+          else
+            echo "Creating a draft release for $tag at $GITHUB_SHA."
+            gh release create "$tag" --draft --target "$GITHUB_SHA" \
+              --title "Microbe $tag" --notes "$notes" --generate-notes
+          fi
+          echo "build=true" >> "$GITHUB_OUTPUT"
+          echo "release=true" >> "$GITHUB_OUTPUT"
 
   build:
     name: ${{ matrix.name }}
-    needs: changes
-    if: needs.changes.outputs.build == 'true'
+    needs: prepare
+    if: needs.prepare.outputs.build == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -151,29 +151,38 @@ jobs:
         run: node scripts/fetch-sidecars.mjs --target ${{ matrix.target }}
 
       - name: Build
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tauriScript: npm run tauri
-          args: --target ${{ matrix.target }}
-          # Only tag pushes publish a (draft) release.
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
-          releaseName: Microbe ${{ github.ref_name }}
-          releaseBody: See the assets below for installers for Linux, Windows and macOS.
-          releaseDraft: true
-          prerelease: false
+        run: npm run tauri build -- --target ${{ matrix.target }}
+
+      - name: Collect installers
+        run: node scripts/release-assets.mjs --target ${{ matrix.target }} --out release-assets
+
+      - name: Attach installers to the draft release
+        if: needs.prepare.outputs.release == 'true'
+        shell: bash
+        run: gh release upload "${{ needs.prepare.outputs.tag }}" release-assets/* --clobber
 
       - name: Upload installers
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        if: needs.prepare.outputs.release != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: microbe-${{ matrix.target }}
-          path: |
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.rpm
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+          path: release-assets/*
           if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: [prepare, build]
+    if: needs.prepare.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - name: Add checksums and publish
+        run: |
+          set -euo pipefail
+          dir=$(mktemp -d)
+          gh release download "$TAG" --dir "$dir" --pattern 'microbe-*'
+          (cd "$dir" && sha256sum microbe-* > SHA256SUMS.txt)
+          gh release upload "$TAG" "$dir/SHA256SUMS.txt" --clobber
+          gh release edit "$TAG" --draft=false --latest
+          echo "Published https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
