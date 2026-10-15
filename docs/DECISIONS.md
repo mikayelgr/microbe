@@ -181,3 +181,9 @@ Template:
 - **Context:** Building MicroPython needs per-port toolchains (ESP-IDF, arm-none-eabi, esp-open-sdk) that users rarely have installed.
 - **Decision:** Build in Docker with one container per build. Images are the official ones where they exist (`espressif/idf`), otherwise small Dockerfiles in `builders.toml` that Microbe builds once. Sources are cloned inside the container into a cached volume. Frozen project modules come from a generated manifest that includes the board's own manifest first. Inputs are validated (`[A-Za-z0-9_.-]`) because they reach a shell.
 - **Consequences:** Needs Docker running; the first build of a port downloads a lot. The ESP-IDF version table must follow MicroPython releases (data, not code). The orchestration is tested against a fake `docker`; a real build is an opt-in hardware test.
+
+## D-028: Release tags rebuild only when build inputs changed
+- **Date:** 2026-10-15 · **Status:** accepted
+- **Context:** A full four-platform build takes a long time, and some version tags only change docs or tests.
+- **Decision:** On a `v*` tag push, `.github/workflows/build.yml` diffs the tagged commit against the tag of the most recent release (drafts included) that has installers. Everything except `docs/`, `e2e/`, `src-tauri/tests/`, `*.md`, `*.test.ts`, `playwright.config.ts` and `.gitignore` counts as a build input. If any input changed, or no earlier release has installers, every platform is built as before. Otherwise the build is skipped and that release's installers are copied to a new draft release for the tag. Manual runs always build.
+- **Consequences:** Carried-over installers keep the old version in their file names and in the app, which is correct because the version is only bumped by editing build inputs. If a file outside those exclusions stops affecting the build (or a new test-only path is added), update the exclusion list in the workflow and here.

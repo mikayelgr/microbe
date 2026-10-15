@@ -1,9 +1,12 @@
 # Builds Microbe for Linux, Windows and macOS.
 #
-# - Push a tag like `v0.2.0`: builds every platform and attaches the installers
-#   to a draft GitHub release named after the tag.
-# - Run manually (Actions → Build → Run workflow): builds every platform and
-#   uploads the installers as workflow artifacts.
+# - Push a tag like `v0.2.0`: if any build input changed since the most recent
+#   release that has installers, builds every platform and attaches the
+#   installers to a draft GitHub release named after the tag. If nothing
+#   changed, skips the build and copies that release's installers to the new
+#   draft release instead (D-028).
+# - Run manually (Actions → Build → Run workflow): always builds every platform
+#   and uploads the installers as workflow artifacts.
 #
 # Binaries are unsigned; macOS Gatekeeper and Windows SmartScreen will warn.
 name: Build
@@ -21,8 +24,82 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.check.outputs.build }}
+      previous: ${{ steps.check.outputs.previous }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compare with the previous release
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          build() { echo "$1"; echo "build=true" >> "$GITHUB_OUTPUT"; exit 0; }
+
+          [[ "$GITHUB_REF" == refs/tags/* ]] || build "Manual run: building."
+          tag="$GITHUB_REF_NAME"
+
+          # Most recent other release (drafts included) that has installers.
+          prev=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq ".[] | select(.tag_name != \"$tag\" and (.assets | length) > 0) | [.created_at, .tag_name] | @tsv" \
+            | sort -r | head -n1 | cut -f2)
+          [[ -n "$prev" ]] || build "No earlier release with installers: building."
+          git rev-parse -q --verify "refs/tags/$prev^{commit}" >/dev/null \
+            || build "Tag $prev of the previous release is missing: building."
+
+          # Everything in the repo is a build input except docs and tests.
+          # Version bumps in package.json / tauri.conf.json / Cargo.toml count:
+          # the version is compiled into the app.
+          changed=$(git diff --name-only "refs/tags/$prev" "$GITHUB_SHA" -- . \
+            ':(exclude)docs' \
+            ':(exclude)e2e' \
+            ':(exclude)src-tauri/tests' \
+            ':(exclude)*.md' \
+            ':(exclude)*.test.ts' \
+            ':(exclude)playwright.config.ts' \
+            ':(exclude).gitignore')
+          if [[ -n "$changed" ]]; then
+            build "Build inputs changed since $prev:"$'\n'"$changed"
+          fi
+
+          echo "No build inputs changed since $prev: carrying its installers over."
+          echo "build=false" >> "$GITHUB_OUTPUT"
+          echo "previous=$prev" >> "$GITHUB_OUTPUT"
+
+  carry-over:
+    name: Carry over installers
+    needs: changes
+    if: needs.changes.outputs.build == 'false'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+      PREV: ${{ needs.changes.outputs.previous }}
+    steps:
+      - name: Copy installers from ${{ needs.changes.outputs.previous }}
+        run: |
+          set -euo pipefail
+          dir=$(mktemp -d)
+          gh release download "$PREV" --dir "$dir"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --draft --verify-tag \
+              --title "Microbe $TAG" \
+              --notes "See the assets below for installers for Linux, Windows and macOS. No build inputs changed since $PREV, so these are its installers."
+          fi
+          gh release upload "$TAG" "$dir"/* --clobber
+
   build:
     name: ${{ matrix.name }}
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
